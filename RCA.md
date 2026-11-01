@@ -199,14 +199,17 @@ Optional. Answer only the ones you got to — number them, skip the rest.
 >   uses (git + curl inside a compromised container are an attacker's toolkit).
 >   166 dpkg packages → a handful of apk packages.
 > - Removed the unused stock `conf.d/default.conf`.
-> - **Size** (`docker image ls`, same machine):
+> - **Size** (`docker image ls`, Docker Desktop on Windows, same machine):
 >
 >   | Image | Size |
 >   |---|---|
->   | before — ubuntu:24.04 + tools | ⚠️ TODO: `___ MB` |
->   | after — nginx:1.30-alpine-slim | ⚠️ TODO: `___ MB` |
+>   | before — ubuntu:24.04 + nginx curl htop vim git | **443 MB** |
+>   | after — nginx:1.30-alpine-slim | **20.6 MB** |
 >
->   How to reproduce: `git checkout <defect-1 commit> -- proxy && docker compose build proxy && docker image ls`,
+>   **~95% smaller (~21x).** Less to pull on every deploy, faster cold starts, and a
+>   much smaller attack surface (fewer packages = fewer CVEs to patch).
+>
+>   How to reproduce: `git checkout HEAD~2 -- proxy && docker compose build proxy && docker image ls`,
 >   then `git checkout HEAD -- proxy` and repeat. CI also prints the "after" size on every run.
 >
 > **2. Non-root proxy**

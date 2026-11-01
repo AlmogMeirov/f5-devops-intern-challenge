@@ -7,6 +7,10 @@ services:
       - "8080:8080"
     environment:
       - PORT=8080
+    # app.py runs as PID 1 and installs no SIGTERM handler; the kernel ignores
+    # default-action signals for PID 1, so `docker stop` waited 10s and then
+    # SIGKILLed it (exit 137). A tiny init (tini) as PID 1 forwards SIGTERM.
+    init: true
     # The backend loads its config (one slow read per key) BEFORE it opens
     # its port, so "container started" != "ready to serve". Readiness is
     # defined by the service's own /health endpoint. Python is guaranteed to

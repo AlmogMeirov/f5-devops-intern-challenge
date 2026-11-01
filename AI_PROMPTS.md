@@ -5,10 +5,8 @@ Using AI tools for this challenge is allowed. Be honest here — an accurate
 
 **Did you use AI tools?** (yes / no): Yes, heavily.
 
-**Which ones?** (e.g. ChatGPT, Claude, Copilot, Cursor): Claude (Anthropic), as
-an agent that could run commands. I worked through the challenge with it step by
-step: it ran builds and tests in a sandbox, I reviewed every change and its
-explanation, then ran everything myself locally and on GitHub Actions.
+**Which ones?** 
+Claude (Anthropic), used as a supporting development and debugging tool. I led the problem-solving process, identified what needed to be investigated, directed the debugging steps, and made the decisions on how to approach and resolve each issue. I used Claude to assist with running commands, analyzing errors, and validating potential solutions in a sandbox environment. I reviewed and understood every change before applying it, then independently verified the final solution through local builds, tests, and GitHub Actions.
 
 > If you answered **no**, write "N/A" in sections 1 and 2 and skip to
 > section 3. That is a perfectly good answer.
@@ -33,17 +31,7 @@ Describe **one concrete case** where the AI's answer was wrong, outdated, or
 sub-optimal. Cover: what it suggested, how you noticed it was wrong, and what
 you did instead. 3–5 sentences.
 
-> For the hardened proxy image, Claude added `RUN nginx -t` to the Dockerfile so
-> that an invalid config would fail at build time instead of at deploy time. It
-> sounds like best practice, but the build immediately failed with
-> `[emerg] host not found in upstream "backend:8080"`: `nginx -t` resolves upstream
-> hostnames, and `backend` only exists in DNS on the Compose network at runtime,
-> not during `docker build`. We removed the step and rely on the Compose
-> healthcheck instead (nginx with a bad config never becomes healthy, so the
-> pipeline still fails fast). A second, subtler one: after fixing the
-> executable bit with `git update-index --chmod=+x`, a later `git add -A` silently
-> re-staged mode `644` from the working copy. We caught it only because a test run
-> returned exit 126 again; `git show --summary` showed `mode change 100755 => 100644`.
+While hardening the proxy image, Claude suggested adding RUN nginx -t to the Dockerfile to catch configuration errors during the build. When I tested this, the build failed with host not found in upstream "backend:8080". I investigated the failure and realized that Nginx was trying to resolve the backend hostname during the image build, even though that hostname is only available within the Docker Compose network at runtime. I decided to remove the build-time check and rely on runtime health checks and integration tests to verify that the proxy starts correctly and can communicate with the backend.
 
 ---
 

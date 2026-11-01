@@ -7,6 +7,18 @@ services:
       - "8080:8080"
     environment:
       - PORT=8080
+    # The backend loads its config (one slow read per key) BEFORE it opens
+    # its port, so "container started" != "ready to serve". Readiness is
+    # defined by the service's own /health endpoint. Python is guaranteed to
+    # exist in this image, so the probe doesn't depend on curl/wget.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=2)"]
+      interval: 2s
+      timeout: 3s
+      retries: 3
+      # Failures during start_period don't count; the container turns
+      # healthy on the first successful probe, so this is a ceiling, not a delay.
+      start_period: 60s
 
   proxy:
     build:
@@ -15,12 +27,20 @@ services:
     ports:
       - "8081:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:80/nginx-health"]
+      interval: 2s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
 
   test-runner:
     build:
       context: ./test-runner
     depends_on:
-      - proxy
+      proxy:
+        condition: service_healthy
     environment:
       - PROXY_URL=http://proxy:80

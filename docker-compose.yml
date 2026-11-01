@@ -29,12 +29,21 @@ services:
       context: ./proxy
     # Published for local debugging: curl http://localhost:8081/nginx-health
     ports:
-      - "8081:80"
+      - "8081:8080"
     depends_on:
       backend:
         condition: service_healthy
+    # Runtime hardening - nginx runs as uid 101 and needs none of these:
+    read_only: true            # immutable root filesystem...
+    tmpfs:
+      - /tmp                   # ...except a scratch dir for pid + temp files
+    cap_drop:
+      - ALL                    # no Linux capabilities (port 8080 needs none)
+    security_opt:
+      - no-new-privileges:true # block setuid/setcap privilege escalation
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:80/nginx-health"]
+      # curl was removed from the image; busybox wget ships with Alpine.
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/nginx-health"]
       interval: 2s
       timeout: 3s
       retries: 3
@@ -47,4 +56,4 @@ services:
       proxy:
         condition: service_healthy
     environment:
-      - PROXY_URL=http://proxy:80
+      - PROXY_URL=http://proxy:8080

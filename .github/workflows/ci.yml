@@ -18,3 +18,9 @@ jobs:
 
       - name: Execute test suite
         run: ./scripts/run-tests.sh
+
+      # Images survive `docker compose down`, so the size of what CI just built
+      # is recorded on every run (see RCA.md, bonus 1).
+      - name: Report image sizes
+        if: always()
+        run: docker image ls --format 'table {{.Repository}}\t{{.Tag}}\t{{.Size}}'
